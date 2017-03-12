@@ -1,4 +1,5 @@
 import fire
+import humanize
 import tabulate
 
 import ultrabak.ctrl as ctrl
@@ -16,8 +17,13 @@ class CmdInterface(object):
         rows = list()
         for task, tbackups in backups.items():
             for tb in tbackups:
-                rows.append([task, tb])
-        print(tabulate(rows, headers=["Task", "Path"]))
+                rows.append([
+                    task,
+                    tb["datetime"],
+                    humanize.naturalsize(tb["size"], gnu=True),
+                    tb["path"]
+                ])
+        print(tabulate.tabulate(rows, headers=["Task", "Datetime (UTC)", "Size", "Path"]))
 
 
 def main():

@@ -89,7 +89,7 @@ class PostgresUltraBakModule(BaseUltraBakModule):
             params.append("--no-password")
 
         if self.database:
-            params += self.database
+            params.append(self.database)
 
         return params
 
@@ -132,9 +132,11 @@ class PostgresUltraBakModule(BaseUltraBakModule):
             try:
                 dt = path_to_datetime(f)
                 self.get_logger().debug("File: \"%s\". Datetime: %s" % (f, dt.isoformat()))
+                path = os.path.abspath(os.path.join(self.target_directory, f))
                 yield {
-                    "file": os.path.abspath(os.path.join(self.target_directory, f)),
-                    "datetime": dt.isoformat()
+                    "path": path,
+                    "size": os.path.getsize(path),
+                    "datetime": dt
                 }
             except:
                 self.get_logger().error("Error listing file: \"%s\"." % (f,))
