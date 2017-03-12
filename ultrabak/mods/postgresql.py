@@ -1,4 +1,4 @@
-from zope.interface.declarations import implements
+from zope.interface.declarations import implements, implementer
 
 from ultrabak.helpers import datetime_to_path
 from ultrabak.mods.base import BaseUltraBakModule
@@ -7,17 +7,14 @@ import os
 import subprocess
 
 
+@implementer(IUltraBakModule)
 class PostgresUltraBakModule(BaseUltraBakModule):
-    implements(IUltraBakModule)
+    logger_name = "postgres"
 
     def __init__(self, config: dict):
-        super().__init__()
+        super().__init__(config)
 
-        if "databases" in config:
-            self.databases = config["databases"]
-            self.all_databases = False
-        else:
-            self.all_databases = True
+        self.databases = config["databases"]
 
         self.format = config.get("format", "plain")
         self.no_owner = config.get("no_owner", False)
@@ -50,7 +47,13 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         params.append("--format="+self.format)
 
         if self.format == "directory":
-            params.append("--file="+os.path.join(self.target_directory, self.target_name))
+            params.append("--file="+self.target_path)
+        elif self.format == "plain":
+            params.append("--file="+self.target_path+".sql")
+        elif self.format == "custom":
+            params.append("--file=" + self.target_path + ".dump")
+        elif self.format == "tar":
+            params.append("--file=" + self.target_path + ".tar")
 
         params.append("--lock-wait-timeout=" + str(self.lock_wait_timeout))
 
@@ -81,11 +84,11 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         if self.username:
             params.append("--username=" + str(self.username))
 
-        if self.password:
-            params.append("--password=" + str(self.password))
-
         if self.no_password:
             params.append("--no-password")
+
+        if self.databases:
+            params += self.databases
 
         return params
 
@@ -98,15 +101,21 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         self.get_logger().debug(str(backup_params))
         self.get_logger().debug(str(backup_env))
 
-        (out, err) = subprocess.Popen(['pg_dump'] + backup_params,
+        cmd = 'pg_dump'
+
+        child = subprocess.Popen([cmd] + backup_params,
                                       stdout=subprocess.PIPE,
-                                      env=backup_env).communicate()
+                                      env=backup_env)
+        (out, err) = child.communicate()
+        rc = child.returncode
 
         if out:
             self.get_logger().debug(out)
 
         if err:
             self.get_logger().error(err)
+
+        if rc > 0:
             self.get_logger().info("Postgres Backup \"%s\" failed." % (self.name,))
         else:
             self.get_logger().info("Postgres Backup \"%s\" successful." % (self.name,))

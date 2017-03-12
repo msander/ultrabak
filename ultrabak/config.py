@@ -2,10 +2,14 @@ import yaml
 import glob
 
 
-class Configurator():
-    def __init__(self, path):
-        collected_config = {}
-        for configfile in glob.glob(path, ".yml", True):
+def load_config(path):
+    collected_config = {
+        "tasks": list(),
+        "general": dict()
+    }
+
+    for configfile in glob.iglob(path):
+        if configfile.endswith(".yml"):
             with open(configfile, "r") as f:
                 config = yaml.load(f,)
 
@@ -14,4 +18,9 @@ class Configurator():
 
                 if "general" in config:
                     collected_config["general"].update(config["general"])
-        return collected_config
+
+    return collected_config
+
+
+class UnknownUltraBakModuleException(Exception):
+    pass

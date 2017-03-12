@@ -7,7 +7,7 @@ import os
 class BaseUltraBakModule:
 
     def __init__(self, config: dict):
-        self.logger = Logger()
+        self.logger = Logger(self.__class__.logger_name)
         self.name = config.get("name", "Unnamed Backup")
 
         self.target_directory = config["target_directory"]
