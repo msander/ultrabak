@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from hyperbak.skeleton import fib
+from ultrabak.skeleton import fib
 
 __author__ = "Marcel Sander"
 __copyright__ = "Marcel Sander"

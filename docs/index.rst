@@ -1,8 +1,8 @@
 ========
-hyperbak
+ultrabak
 ========
 
-This is the documentation of **hyperbak**.
+This is the documentation of **ultrabak**.
 
 .. note::
 
