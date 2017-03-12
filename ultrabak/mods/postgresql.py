@@ -17,23 +17,24 @@ class PostgresUltraBakModule(BaseUltraBakModule):
 
         self.database = config["database"]
 
-        self.format = config.get("format", "plain")
+        self.format = "plain" #config.get("format", "plain")
+        #TODO: Reactivate other methods, when restore is implemented
 
         if self.format == "directory":
-            self.target_path = self.target_path
+            pass
         elif self.format == "plain":
-            self.target_path = self.target_path + ".sql"
+            self.target_path += ".sql"
         elif self.format == "custom":
-            self.target_path = self.target_path + ".dump"
+            self.target_path += ".dump"
         elif self.format == "tar":
-            self.target_path = self.target_path + ".tar"
+            self.target_path += ".tar"
 
         self.no_owner = config.get("no_owner", False)
         self.no_acl = config.get("no_acl", False)
         self.clean = config.get("clean", False)
         self.inserts = config.get("inserts", False)
         self.if_exists = config.get("if_exists", False)
-        self.lock_wait_timeout = config.get("lock_wait_timeout",10000)
+        self.lock_wait_timeout = config.get("lock_wait_timeout", 10000)
 
         # We force to quote all identifiers for compatibility reasons with different pg versions
         self.quote_all_identifiers = True
@@ -134,7 +135,6 @@ class PostgresUltraBakModule(BaseUltraBakModule):
 
         return rc == 0 and zip_status is True
 
-
     def zip_output(self):
         self.get_logger().debug("Zipping Postgres Backup \"%s\"." % (self.name,))
         child = subprocess.Popen(["bzip2", "-z", self.target_path])
@@ -154,7 +154,6 @@ class PostgresUltraBakModule(BaseUltraBakModule):
 
         return rc == 0
 
-
     def list_backups(self):
         self.get_logger().debug("Listing Postgres Backups for \"%s\"." % (self.name,))
         for f in sorted(os.listdir(self.target_directory)):
@@ -170,5 +169,5 @@ class PostgresUltraBakModule(BaseUltraBakModule):
             except:
                 self.get_logger().error("Error listing file: \"%s\"." % (f,))
 
-    def restore(self):
-        pass
+
+
