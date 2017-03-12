@@ -1,12 +1,23 @@
 import yaml
 import glob
+import os
 
+from ultrabak.logger import Logger
+
+log = Logger("config")
 
 def load_config(path):
     collected_config = {
         "tasks": list(),
         "general": dict()
     }
+
+    path = os.path.abspath(path)
+
+    if not "*" in path:
+        path = os.path.join(path, "**")
+
+    log.debug("Loading config from "+path)
 
     for configfile in glob.iglob(path):
         if configfile.endswith(".yml"):

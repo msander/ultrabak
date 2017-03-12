@@ -1,28 +1,22 @@
 import fire
 
-from ultrabak.config import load_config, UnknownUltraBakModuleException
-from ultrabak.mods.postgresql import PostgresUltraBakModule
-
-
-def get_mod(task):
-    mod = None
-    if task["mod"] == "postgresql":
-        mod = PostgresUltraBakModule(task)
-
-    if not mod:
-        raise UnknownUltraBakModuleException()
-    return mod
+import ultrabak.ctrl as ctrl
 
 
 class CmdInterface(object):
 
     @classmethod
-    def backup(cls, config="/etc/ultrabak.d/**"):
-        config_dict = load_config(config)
+    def backup(cls, config):
+        ctrl.backup(config)
 
-        for task in config_dict["tasks"]:
-            mod = get_mod(task)
-            mod.backup()
+    @classmethod
+    def list_backups(cls, config):
+        backups = ctrl.list_backups(config)
+
+
+
+def main():
+    fire.Fire(CmdInterface, name="ultrabak")
 
 if __name__ == '__main__':
-    fire.Fire(CmdInterface, name="ultrabak")
+    main()

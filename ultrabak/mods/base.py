@@ -7,7 +7,7 @@ import os
 class BaseUltraBakModule:
 
     def __init__(self, config: dict):
-        self.logger = Logger(self.__class__.logger_name)
+        self.logger = Logger(name="mods."+self.__class__.logger_name)
         self.name = config.get("name", "Unnamed Backup")
 
         self.target_directory = config["target_directory"]
@@ -19,6 +19,8 @@ class BaseUltraBakModule:
         self.get_logger().debug("Setting target path to \"%s\"" % (self.target_path,))
 
         self.source_directory = config["target_directory"]
+
+        self.sudo = config["sudo"]
 
     def get_logger(self):
         return self.logger

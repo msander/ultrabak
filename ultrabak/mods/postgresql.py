@@ -1,9 +1,10 @@
 from zope.interface.declarations import implements, implementer
 
-from ultrabak.helpers import datetime_to_path
+from ultrabak.helpers import datetime_to_path, path_to_datetime
 from ultrabak.mods.base import BaseUltraBakModule
 from ultrabak.mods.interface import IUltraBakModule
 import os
+import glob
 import subprocess
 
 
@@ -14,7 +15,7 @@ class PostgresUltraBakModule(BaseUltraBakModule):
     def __init__(self, config: dict):
         super().__init__(config)
 
-        self.databases = config["databases"]
+        self.database = config["database"]
 
         self.format = config.get("format", "plain")
         self.no_owner = config.get("no_owner", False)
@@ -87,13 +88,13 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         if self.no_password:
             params.append("--no-password")
 
-        if self.databases:
-            params += self.databases
+        if self.database:
+            params += self.database
 
         return params
 
     def backup(self):
-        self.get_logger().info("Running Postgres Backup \"%s\"." % (self.name,))
+        self.get_logger().debug("Running Postgres Backup \"%s\"." % (self.name,))
 
         backup_params = self.get_backup_params()
         backup_env = self.get_env()
@@ -101,11 +102,14 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         self.get_logger().debug(str(backup_params))
         self.get_logger().debug(str(backup_env))
 
-        cmd = 'pg_dump'
+        backup_params = ['pg_dump', ] + backup_params
 
-        child = subprocess.Popen([cmd] + backup_params,
-                                      stdout=subprocess.PIPE,
-                                      env=backup_env)
+        if self.sudo:
+            backup_params = ['sudo', '-u', self.sudo] + backup_params
+
+        child = subprocess.Popen(backup_params,
+                                 stdout=subprocess.PIPE,
+                                 env=backup_env)
         (out, err) = child.communicate()
         rc = child.returncode
 
@@ -116,8 +120,24 @@ class PostgresUltraBakModule(BaseUltraBakModule):
             self.get_logger().error(err)
 
         if rc > 0:
-            self.get_logger().info("Postgres Backup \"%s\" failed." % (self.name,))
+            self.get_logger().error("Postgres Backup \"%s\" failed." % (self.name,))
         else:
             self.get_logger().info("Postgres Backup \"%s\" successful." % (self.name,))
 
         return bool(err)
+
+    def list_backups(self):
+        self.get_logger().debug("Listing Postgres Backups for \"%s\"." % (self.name,))
+        for f in sorted(os.listdir(self.target_directory)):
+            try:
+                dt = path_to_datetime(f)
+                self.get_logger().debug("File: \"%s\". Datetime: %s" % (f, dt.isoformat()))
+                yield {
+                    "file": os.path.abspath(os.path.join(self.target_directory, f)),
+                    "datetime": dt.isoformat()
+                }
+            except:
+                self.get_logger().error("Error listing file: \"%s\"." % (f,))
+
+    def restore(self):
+        pass
