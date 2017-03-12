@@ -25,5 +25,5 @@ def list_backups(config):
     backups = {}
     for task in config_dict["tasks"]:
         mod = get_mod(task)
-        backups[task["name"]] = mod.list_backups()
+        backups[task["name"]] = list(mod.list_backups())
     return backups

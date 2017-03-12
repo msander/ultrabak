@@ -1,4 +1,5 @@
 import fire
+import tabulate
 
 import ultrabak.ctrl as ctrl
 
@@ -12,7 +13,11 @@ class CmdInterface(object):
     @classmethod
     def list_backups(cls, config):
         backups = ctrl.list_backups(config)
-
+        rows = list()
+        for task, tbackups in backups.items():
+            for tb in tbackups:
+                rows.append([task, tb])
+        print(tabulate(rows, headers=["Task", "Path"]))
 
 
 def main():
