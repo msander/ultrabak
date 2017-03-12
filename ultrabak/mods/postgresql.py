@@ -18,6 +18,16 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         self.database = config["database"]
 
         self.format = config.get("format", "plain")
+
+        if self.format == "directory":
+            self.target_path = self.target_path
+        elif self.format == "plain":
+            self.target_path = self.target_path + ".sql"
+        elif self.format == "custom":
+            self.target_path = self.target_path + ".dump"
+        elif self.format == "tar":
+            self.target_path = self.target_path + ".tar"
+
         self.no_owner = config.get("no_owner", False)
         self.no_acl = config.get("no_acl", False)
         self.clean = config.get("clean", False)
@@ -47,14 +57,7 @@ class PostgresUltraBakModule(BaseUltraBakModule):
 
         params.append("--format="+self.format)
 
-        if self.format == "directory":
-            params.append("--file="+self.target_path)
-        elif self.format == "plain":
-            params.append("--file="+self.target_path+".sql")
-        elif self.format == "custom":
-            params.append("--file=" + self.target_path + ".dump")
-        elif self.format == "tar":
-            params.append("--file=" + self.target_path + ".tar")
+        params.append("--file=" + self.target_path)
 
         params.append("--lock-wait-timeout=" + str(self.lock_wait_timeout))
 
@@ -119,12 +122,38 @@ class PostgresUltraBakModule(BaseUltraBakModule):
         if err:
             self.get_logger().error(err)
 
+        zip_status = True
+
         if rc > 0:
             self.get_logger().error("Postgres Backup \"%s\" failed." % (self.name,))
         else:
             self.get_logger().info("Postgres Backup \"%s\" successful." % (self.name,))
 
-        return bool(err)
+            if self.format in ("plain","custom","tar"):
+                zip_status = self.zip_output()
+
+        return rc == 0 and zip_status is True
+
+
+    def zip_output(self):
+        self.get_logger().debug("Zipping Postgres Backup \"%s\"." % (self.name,))
+        child = subprocess.Popen(["bzip2", "-z", self.target_path])
+        (out, err) = child.communicate()
+        rc = child.returncode
+
+        if out:
+            self.get_logger().debug(out)
+
+        if err:
+            self.get_logger().error(err)
+
+        if rc > 0:
+            self.get_logger().error("Zipping Postgres Backup \"%s\" failed." % (self.name,))
+        else:
+            self.get_logger().info("Zipping Postgres Backup \"%s\" successful." % (self.name,))
+
+        return rc == 0
+
 
     def list_backups(self):
         self.get_logger().debug("Listing Postgres Backups for \"%s\"." % (self.name,))
